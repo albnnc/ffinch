@@ -6,16 +6,21 @@ export interface CacheLibOptions {
   name: string;
   version: string;
   lib: string;
-  force?: boolean;
+  reload?: boolean;
 }
 
-export async function cacheLib({ name, version, lib, force }: CacheLibOptions) {
+export async function cacheLib({
+  name,
+  version,
+  lib,
+  reload,
+}: CacheLibOptions) {
   const id = await identify({ name, version });
   const cacheFile = await locateCacheFile(id);
   const cacheFileExists = await Deno.lstat(cacheFile)
     .then(() => true)
     .catch(() => false);
-  if (cacheFileExists && !force) {
+  if (cacheFileExists && !reload) {
     return cacheFile;
   }
   const dirUrl = lib.startsWith("file://") ? lib : path.toFileUrl(lib);
