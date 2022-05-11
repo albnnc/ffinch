@@ -1,18 +1,22 @@
 import { path, streams } from "./deps.ts";
 import { identify } from "./identify.ts";
 import { locateCacheFile } from "./locate_cache_file.ts";
+import { prepareCargoRepo } from "./prepare_cargo_repo.ts";
+import { prepareLib } from "./prepare_lib.ts";
 
 export interface CacheLibOptions {
   name: string;
   version: string;
-  lib: string;
+  libDir?: string;
+  cargoRepo?: string;
   reload?: boolean;
 }
 
 export async function cacheLib({
   name,
   version,
-  lib,
+  libDir,
+  cargoRepo,
   reload,
 }: CacheLibOptions) {
   const id = await identify({ name, version });
@@ -23,24 +27,20 @@ export async function cacheLib({
   if (cacheFileExists && !reload) {
     return cacheFile;
   }
-  const dirUrl = lib.startsWith("file://") ? lib : path.toFileUrl(lib);
-  const libUrl = new URL(
-    `./lib${name}` +
-      {
-        windows: ".dll",
-        darwin: ".dylib",
-        linux: ".so",
-      }[Deno.build.os],
-    dirUrl
-  ).toString();
-  const resp = await fetch(libUrl);
+  const reader = libDir
+    ? await prepareLib({ name, libDir })
+    : cargoRepo
+    ? await prepareCargoRepo({ name, cargoRepo })
+    : undefined;
+  if (!reader) {
+    throw new Error("Either libDir or cargoRepo option must be used");
+  }
   if (cacheFileExists) {
     await Deno.remove(cacheFile);
   }
   const cacheDir = path.dirname(cacheFile);
   await Deno.mkdir(cacheDir, { recursive: true }).catch(() => undefined);
   const file = await Deno.create(cacheFile);
-  const reader = streams.readerFromStreamReader(resp.body!.getReader());
   await streams.copy(reader, file);
   return cacheFile;
 }
