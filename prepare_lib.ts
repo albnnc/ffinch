@@ -6,9 +6,12 @@ export interface PrepareLibOptions {
 }
 
 export async function prepareLib({ name, libDir }: PrepareLibOptions) {
-  const dirUrl = libDir.startsWith("file://")
-    ? libDir
-    : path.toFileUrl(libDir).toString();
+  const dirUrl =
+    libDir.startsWith("file://") ||
+    libDir.startsWith("http://") ||
+    libDir.startsWith("https://")
+      ? libDir
+      : path.toFileUrl(libDir).toString();
   const libUrl = new URL(
     `./lib${name}` +
       {
