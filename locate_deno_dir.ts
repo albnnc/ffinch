@@ -4,6 +4,10 @@ export async function locateDenoDir(): Promise<string> {
   if (denoDir) {
     return denoDir;
   }
+  const envDenoDir = Deno.env.get("DENO_DIR");
+  if (envDenoDir) {
+    return (denoDir = envDenoDir);
+  }
   const process = await Deno.run({
     cmd: ["deno", "info", "--json"],
     stdout: "piped",
