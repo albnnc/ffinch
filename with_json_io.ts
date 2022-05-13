@@ -9,7 +9,8 @@ export type JsonIoFn = (
 export function withJsonIo(pointerIoFn: PointerIoFn): JsonIoFn {
   const encoder = new TextEncoder();
   const jsonIoFn: JsonIoFn = async (jsonInput) => {
-    const pointerInput = encoder.encode(JSON.stringify(jsonInput));
+    const pointerInputBuffer = encoder.encode(JSON.stringify(jsonInput));
+    const pointerInput = Uint8Array.from([...pointerInputBuffer, 0]);
     const pointerOutput = await pointerIoFn(pointerInput);
     if (!pointerOutput.value) {
       throw new Error("Got null pointer");
